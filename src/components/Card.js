@@ -17,10 +17,10 @@ const Card = ({ image, name, price }) => {
       <div className="flex items-center justify-between px-6 py-4">
         <div>
           <div className="text-[14px] mb-1">{name}</div>
-          <p className="text-red-500 text-base">{price}</p>
+          <p className="text-red-500 text-base">{price}$</p>
         </div>
         <button
-          className="bg-yellow-500 text-white p-3 rounded"
+          className="bg-[#FAA74F] text-white p-3 rounded ml-2"
         >
           <IoCartOutline />
         </button>

@@ -6,7 +6,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Cart from "./components/Cart"; 
 import Search from "./pages/Search";
-import HandmadeCrafts from "./pages/HandmadeCrafts";
+import CategoryPage from "./pages/CategoryPage";
 import { CartProvider } from "./context/CartContext"; 
 import ProductDetail from "./pages/ProductDetail";
 import Events from "./pages/Events";
@@ -16,6 +16,7 @@ import Blog from "./pages/Blog";
 import AboutUs from "./pages/AboutUs";
 import CartDetail from "./pages/CartDetail";
 import { AuthProvider } from "./context/AuthContext";
+import Category from "./pages/Category";
 
 function App() {
   return (
@@ -29,7 +30,8 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/search" element={<Search />} />
-            <Route path="/category/handmade-crafts" element={<HandmadeCrafts />} />
+            <Route path="/category/:slug" element={<CategoryPage />} />
+            <Route path="/category" element={<Category />} />
             <Route path="/productdetail/:slug" element={<ProductDetail />} />
             <Route path="/eventdetail/:slug" element={<EventDetail />} />
             <Route path="/events" element={<Events />} />

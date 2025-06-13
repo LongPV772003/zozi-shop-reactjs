@@ -14,7 +14,6 @@ const Cart = () => {
   if (!isOpen) return null;
 
   return (
-    // Nền mờ
     <div className="fixed inset-0 z-40">
       <div 
         className="absolute inset-0 bg-black/30 z-40" 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState,useEffect } from "react";
 import { Link } from "react-router-dom";
 import logo from "../assets/logo.png";
 import { IoCartOutline } from "react-icons/io5";
@@ -9,11 +9,11 @@ import { useCart } from '../context/CartContext';
 import { RiArrowDropDownLine } from "react-icons/ri";
 import { useAuth } from "../context/AuthContext";
 import Tippy from "@tippyjs/react";
+import { fetchCategories } from "../api/categoryApi";
 
 
 const Navbar = () => {
   const { user, logout } = useAuth();
-  console.log(user)
   const [menuOpen, setMenuOpen] = useState(false);
   const { toggleCart } = useCart();
   const [showMenu, setShowMenu] = useState(false);
@@ -22,14 +22,19 @@ const Navbar = () => {
     setActive(menu.toLowerCase().replace(/\s+/g, "-"));
     setMenuOpen(false);
   };
-  const categories = [
-    "Handmade Crafts",
-    "Home Decor",
-    "Jewelry & Accessories",
-    "Personalized Gifts",
-    "Art & Paintings",
-    "Cultural Souvenirs",
-  ];
+  const [categories, setCategories] = useState([]);
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const data = await fetchCategories();
+        setCategories(data.categories);
+      } catch (err) {
+        console.error("Không thể tải danh mục", err);
+      }
+    };
+
+    loadCategories();
+  }, []);
 
   return (
     <nav className="bg-white border-b shadow-sm px-6 py-4">
@@ -47,7 +52,9 @@ const Navbar = () => {
           >
             <Link
               to="/category"
-              className="flex justify-center items-center text-gray-700 hover:text-[#FAA74F]"
+              className={`flex items-center ${
+                active.startsWith("category") ? "text-[#FAA74F]" : "text-gray-700"
+              } hover:text-[#FAA74F]`}
             >
               Category
               <RiArrowDropDownLine className="text-[28px]" />
@@ -58,12 +65,13 @@ const Navbar = () => {
                 {categories.map((cat, idx) => (
                   <Link
                     key={idx}
-                    to={`/category/${cat.toLowerCase().replace(/\s+/g, "-")}`}
-                    onClick={() => handleMenuClick(cat)} className={`${
-                      active === cat.toLowerCase().replace(/\s+/g, "-") ? "text-[#FAA74F]" : "text-gray-700"
+                    to={`/category/${cat.name}`}
+                    onClick={() => handleMenuClick(`category/${cat.slug}`)}
+                    className={`${
+                      active === `category/${cat.slug}` ? "text-[#FAA74F]" : "text-gray-700"
                     } block px-4 py-2 hover:bg-gray-100 hover:text-[#FAA74F] transition`}
                   >
-                    {cat}
+                    {cat.name}
                   </Link>
                 ))}
               </div>

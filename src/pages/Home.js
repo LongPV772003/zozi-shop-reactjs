@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import bgImage from "../assets/background.png"; 
 import bgImage2 from "../assets/background2.png"; 
 import polaroid1 from "../assets/giftone.png"; 
@@ -15,6 +15,7 @@ import virus from '../assets/virus.png';
 import { useState } from "react";
 import {HiChevronRight  } from "react-icons/hi2";
 import { GrLinkNext } from "react-icons/gr";
+import { fetchProducts } from '../api/productApi';
 const images = [
   {
     src: handmade1,
@@ -43,6 +44,20 @@ const images = [
 ];
 const HomePage = () => {
   const [current, setCurrent] = useState(0);
+  const [product, setProduct] = useState([]);
+  useEffect(()=>{
+    const loadProducts = async()=>{
+      try{
+        const data = await fetchProducts();
+        setProduct(data.products)
+        console.log(product)
+      }
+      catch(err){
+        console.log("Không thể tải sản phẩm", err)
+      }
+    }
+    loadProducts();
+  },[])
 
   const nextSlide = () => {
     setCurrent((prev) => (prev + 1) % images.length);
@@ -88,14 +103,9 @@ const HomePage = () => {
         <div className="text-center text-[#FAA74F] text-3xl font-bold mt-12">Trending now</div>
         <div className="text-center text-lg my-6">Popular products</div>
         <div className="flex flex-wrap gap-[34px] justify-round mt-10">
-          <Card image={nonla} name="Vietnamese conical hat" price="$15"/>
-          <Card image={nonla} name="Vietnamese conical hat" price="$15"/>
-          <Card image={nonla} name="Vietnamese conical hat" price="$15"/>
-          <Card image={nonla} name="Vietnamese conical hat" price="$15"/>
-          <Card image={nonla} name="Vietnamese conical hat" price="$15"/>
-          <Card image={nonla} name="Vietnamese conical hat" price="$15"/>
-          <Card image={nonla} name="Vietnamese conical hat" price="$15"/>
-          <Card image={nonla} name="Vietnamese conical hat" price="$15"/>
+         {
+          product.map(pro => pro.stock <= 10 && <Card image={pro.images?.[0] || nonla} name={pro.name} price={pro.price}/>)
+         }
         </div>
         <div className="flex justify-center">
           <button className="px-4 py-2 border-[#FAA74F] border-[1px] text-[#FAA74F] rounded-[6px] hover:bg-orange-100 mt-6">Show more</button>
@@ -104,15 +114,10 @@ const HomePage = () => {
        <div className="px-24">
         <div className="text-center text-[#FAA74F] text-3xl font-bold mt-12">Featured products</div>
         <div className="text-center text-lg my-6">Discover our curated selection of featured products</div>
-        <div className="flex flex-wrap gap-[20px] justify-between">
-          <Card image={nonla} name="Vietnamese conical hat" price="$15"/>
-          <Card image={handmade3} name="Vietnamese conical hat" price="$15"/>
-          <Card image={handmade1} name="Vietnamese conical hat" price="$15"/>
-          <Card image={handmade3} name="Vietnamese conical hat" price="$15"/>
-          <Card image={handmade2} name="Vietnamese conical hat" price="$15"/>
-          <Card image={handmade1} name="Vietnamese conical hat" price="$15"/>
-          <Card image={handmade2} name="Vietnamese conical hat" price="$15"/>
-          <Card image={handmade3} name="Vietnamese conical hat" price="$15"/>
+        <div className="flex flex-wrap gap-[34px] justify-round mt-10">
+        {
+          product.map(pro => pro.price >150 && <Card image={pro.images?.[0] || nonla} name={pro.name} price={pro.price}/>)
+        }
         </div>
         <div className="flex justify-center">
           <button className="px-4 py-2 border-[#FAA74F] border-[1px] text-[#FAA74F] rounded-[6px] mb-12 hover:bg-orange-100 mt-6">Show more</button>

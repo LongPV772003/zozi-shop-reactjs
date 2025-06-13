@@ -3,14 +3,13 @@ import { IoSearchOutline } from "react-icons/io5";
 import { useRef,useState,useEffect } from 'react';
 import Card from "../components/Card"
 import nonla from '../assets/nonla.png';
-import handmade1 from '../assets/handmade1.png';
-import handmade2 from '../assets/handmade2.png';
-import handmade3 from '../assets/handmade3.png';
 import Pagination from '../components/Pagination';
 import bgImage2 from '../assets/background2.png';
 import noResult from '../assets/noproduct.png';
 import SortBar from '../components/SortBar';
 import { FaCircleXmark,FaSpinner  } from "react-icons/fa6";
+import { fetchProducts } from '../api/productApi';
+import { fetchCategories } from '../api/categoryApi';
 
 import Tippy from '@tippyjs/react/headless';
 const removeVietnameseTones = (str) => {
@@ -22,23 +21,43 @@ const removeVietnameseTones = (str) => {
 
 const Search = () => {
   const inputRef = useRef(null);
+  const [categories, setCategories] = useState([]);
+  const [product, setProduct] = useState([]);
+  const [priceFilter, setPriceFilter] = useState("All");
+  const [sortType, setSortType] = useState("Latest");
+  const [currentPage, setCurrentPage] = useState(1);
   const inputWrapperRef = useRef(null); // <-- thêm dòng này
   const [searchValue, setSearchValue] = useState('');
   const [showResult, setShowResult] = useState(false);
   const [loading, setLoading] = useState(false);
   const [searchResult, setSearchResult] = useState([]);
-  const [priceFilter, setPriceFilter] = useState("All");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [sortType, setSortType] = useState("Popular");
-  const itemsPerPage = 8;
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  let item = [];
+  const itemsPerPage = 16;
 
-  const images = [nonla, handmade1, handmade2, handmade3];
-  const products = Array.from({ length: 50 }, (_, i) => ({
-      image: images[i % images.length],
-      name: `Sản phẩm ${i + 1}`,
-      price: `$${Math.floor(Math.random() * 100) + 1}`,
-  }));
-
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        const data = await fetchProducts();
+        setProduct(data.products);
+      } catch (err) {
+        console.log("Không thể tải sản phẩm", err);
+      }
+    };
+    loadProducts();
+  }, []);
+  useEffect(() => {
+      const loadCategories = async () => {
+        try {
+          const data = await fetchCategories();
+          setCategories(data.categories);
+        } catch (err) {
+          console.error("Không thể tải danh mục", err);
+        }
+      };
+      loadCategories();
+    }, []);
+  useEffect(() => setCurrentPage(1), [sortType, priceFilter]);
   useEffect(() => {
     setLoading(true);
     const delayDebounce = setTimeout(() => {
@@ -46,7 +65,7 @@ const Search = () => {
         setSearchResult([]);
         setLoading(false);
       } else {
-        const filtered = products.filter(product =>
+        const filtered = product.filter(product =>
           removeVietnameseTones(product.name).includes(removeVietnameseTones(searchValue))
         );
         setSearchResult(filtered);
@@ -58,7 +77,10 @@ const Search = () => {
   }, [searchValue]);
   
 
-
+  const handleChangeCategory = (id)=>{
+    item = product.filter(pro=> pro.category_id = id)
+  }
+  console.log(item)
   const handleClear = () => {
       setSearchValue('');
       setSearchResult([]);
@@ -68,23 +90,37 @@ const Search = () => {
   const handleIconClick = () => {
       inputRef.current?.focus();
   };
+  const filteredItems = product.filter((item) => {
+  const price = parseFloat(item.price?.toString().replace("$", "") || 0);
+  const matchPrice = 
+    priceFilter === "< $50" ? price < 50 :
+    priceFilter === "$50 - $200" ? price >= 50 && price <= 200 :
+    priceFilter === "> $200" ? price > 200 : true;
 
-  const filteredItems = searchResult.length > 0 ? searchResult : products;
+  const matchCategory =
+    selectedCategory === "All" ? true : item.category === selectedCategory;
+
+  return matchPrice && matchCategory;
+});
+
   const sortedItems = [...filteredItems].sort((a, b) => {
-      const priceA = parseFloat(a.price.slice(1));
-      const priceB = parseFloat(b.price.slice(1));
-      switch (sortType) {
-          case "Latest": return b.name.localeCompare(a.name);
-          case "Best seller": return b.price.length - a.price.length;
-          case "Price": return priceA - priceB;
-          default: return 0;
-      }
+    switch (sortType) {
+      case "Latest":
+        return new Date(b.createdAt) - new Date(a.createdAt);
+      case "Best seller":
+        return b.price.toString().length - a.price.toString().length;
+      case "Name A-Z":
+        return a.name.localeCompare(b.name);
+      case "Name Z-A":
+        return b.name.localeCompare(a.name);
+      default:
+        return 0;
+    }
   });
 
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentItems = sortedItems.slice(startIndex, startIndex + itemsPerPage);
-  const totalPages = Math.ceil(sortedItems.length / itemsPerPage);
-
+  const currentItems = searchValue.trim() ? searchResult.slice(startIndex, startIndex + itemsPerPage) : sortedItems.slice(startIndex, startIndex + itemsPerPage);
+  const totalPages = Math.ceil(searchValue.trim() ? searchResult.length / itemsPerPage : sortedItems.length / itemsPerPage);
   return (
       <div className="">
           <div className="w-full flex flex-col sm:flex-row items-center gap-3 sm:gap-4 p-4 rounded-xl px-24">
@@ -153,12 +189,14 @@ const Search = () => {
         </Tippy>
 
               <select
-                  className="w-full sm:w-1/3 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full sm:w-1/3 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
               >
-                  <option>All categories</option>
-                  <option>Crystals</option>
-                  <option>Chairs</option>
-                  <option>Decor</option>
+                <option value="All">All categories</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.name}>{cat.name}</option>
+                ))}
               </select>
 
               <button className="w-full sm:w-auto px-6 py-2 bg-[#FAA74F] text-white font-semibold rounded-lg hover:bg-orange-500 transition">
@@ -166,27 +204,29 @@ const Search = () => {
               </button>
           </div>
 
-          <SortBar 
-              activeSort={sortType}
-              onSortChange={setSortType}
-              priceFilter={priceFilter}
-              onPriceFilterChange={setPriceFilter}
-              totalProducts={filteredItems.length}
+          <SortBar
+          activeSort={sortType}
+          onSortChange={setSortType}
+          priceFilter={priceFilter}
+          onPriceFilterChange={setPriceFilter}
+          totalProducts={searchValue.trim() ? searchResult.length : filteredItems.length}
+        />
+        <div className="flex flex-wrap gap-[34px] justify-round mt-10 px-24">
+          {currentItems.length > 0 ? currentItems.map((pro, idx) => (
+            <Card key={idx} image={pro.images?.[0] || nonla} name={pro.name} price={pro.price} />
+          )) : (
+            <div className="w-full text-center text-gray-500 text-lg py-8">
+              No products found.
+            </div>
+          )}
+        </div>
+        <div className="flex justify-center mt-4">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
           />
-
-          <div className="flex flex-wrap gap-[34px] mt-10 px-24">
-              {currentItems.map((item, idx) => (
-                  <Card key={idx} image={item.image} name={item.name} price={item.price} />
-              ))}
-          </div>
-
-          <div className="flex justify-center mt-4">
-              <Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={setCurrentPage}
-              />
-          </div>
+        </div>
 
           <div className="w-full h-full relative flex flex-col justify-center items-center p-16 bg-cover bg-center"
               style={{ backgroundImage: `url(${bgImage2})` }}>
